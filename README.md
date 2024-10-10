@@ -50,10 +50,14 @@ The HTML to EXE Converter is a Python application that allows users to convert a
    Once the conversion is complete, the output directory will be displayed, containing the generated executable and other processed files.
 
 ## Screenshots
-*(Add screenshots of the application interface here)*
+![HTML To exe](https://github.com/SafeerAbbas624/HTML_to_exe/blob/main/10.10.2024_09.51.41_REC.png)
+
+![html to exe](https://github.com/SafeerAbbas624/HTML_to_exe/blob/main/10.10.2024_09.52.34_REC.png)
+
+![html to exe](https://github.com/SafeerAbbas624/HTML_to_exe/blob/main/10.10.2024_09.53.19_REC.png)
 
 ## License
-This project is licensed under the Mozilla Public License Version 2.0. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Mozilla Public License Version 2.0. See the [LICENSE]([LICENSE](https://github.com/SafeerAbbas624/HTML_to_exe/blob/main/LICENSE)) file for details.
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
