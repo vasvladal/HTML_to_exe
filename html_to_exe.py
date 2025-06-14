@@ -1,15 +1,23 @@
+import codecs  # Add this import at the top of the file
 import sys
 import os
 import shutil
 from datetime import datetime
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QProgressBar, QMessageBox, QComboBox
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QProgressBar, QMessageBox, QComboBox # type: ignore
+from PyQt5.QtCore import Qt, QThread, pyqtSignal # type: ignore
+from PyQt5.QtCore import QUrl
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWidgets import QMessageBox
 from bs4 import BeautifulSoup
 import csscompressor
 import jsmin
-import PyInstaller.__main__
-from PyQt5.QtGui import QIcon
-import codecs  # Add this import at the top of the file
+# With this more explicit import:
+try:
+    import PyInstaller.__main__ as pyi_main
+except ImportError:
+    print("PyInstaller not found. Please install it with: pip install pyinstaller")
+    sys.exit(1)
+from PyQt5.QtGui import QIcon 
 import time
 
 # Global variables
@@ -92,6 +100,17 @@ def process_files():
                 shutil.copy(os.path.join(root, file), os.path.join(temp_dir, file))
                 print(f"Copied .mp3 file: {file}")
 
+    # Copy other asset files (images, fonts, etc.)
+    for root, _, files in os.walk(input_path):
+        for file in files:
+            if not file.endswith(('.html', '.css', '.js', '.mp3')):
+                # Preserve directory structure for assets
+                rel_path = os.path.relpath(os.path.join(root, file), input_path)
+                dest_path = os.path.join(temp_dir, rel_path)
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                shutil.copy(os.path.join(root, file), dest_path)
+                print(f"Copied asset file: {file}")
+
     # Generate license file
     generate_license()
 
@@ -111,10 +130,7 @@ def create_executable(expiry_selection):
     # Copy the license file to the temp directory
     shutil.copy(os.path.join(output_path, 'LICENSE'), os.path.join(temp_dir, 'LICENSE'))
     
-    # Prepare the data files
-    data_files = [(temp_dir, '.')]
-    
-    PyInstaller.__main__.run([
+    """ PyInstaller.__main__.run([
         '--name=WebApp',
         '--onefile',
         '--windowed',
@@ -122,7 +138,18 @@ def create_executable(expiry_selection):
         '--distpath=%s' % output_path,  # Specify the output directory
         *icon_param,
         main_script
+    ]) """
+
+    pyi_main.run([
+        '--name=WebApp',
+        '--onefile',
+        '--windowed',
+        f'--add-data={temp_dir}{os.pathsep}.',
+        '--distpath=%s' % output_path,
+        *icon_param,
+        main_script
     ])
+
     os.remove(main_script)
 
 def create_main_script():
@@ -132,9 +159,10 @@ def create_main_script():
     script_content = """
 import sys
 import os
-import webbrowser
 import time
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QMessageBox
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtCore import QUrl
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -150,16 +178,34 @@ def check_expiry():
             QMessageBox.critical(None, "Expired", "This application has expired.")
             sys.exit(1)
 
+class WebAppWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Web Application')
+        self.setGeometry(100, 100, 1200, 800)
+        
+        # Create central widget and layout
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
+        
+        # Create web view
+        self.web_view = QWebEngineView()
+        layout.addWidget(self.web_view)
+        
+        # Load the HTML file
+        index_path = resource_path('index.html')
+        if os.path.exists(index_path):
+            file_url = QUrl.fromLocalFile(os.path.abspath(index_path))
+            self.web_view.load(file_url)
+        else:
+            self.web_view.setHtml("<h1>Error: index.html not found</h1>")
+
 if __name__ == '__main__':
     check_expiry()
     app = QApplication(sys.argv)
-    window = QWidget()
-    window.setWindowTitle('Web Application')
-    window.setGeometry(100, 100, 300, 50)
+    window = WebAppWindow()
     window.show()
-    
-    index_path = resource_path('index.html')
-    webbrowser.open('file://' + index_path)
     
     sys.exit(app.exec_())
 """.format(

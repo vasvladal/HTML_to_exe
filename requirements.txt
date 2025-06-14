@@ -1,5 +1,7 @@
-PyQt5==5.15.9
+PyQt5==5.15.10
 beautifulsoup4==4.12.2
 csscompressor==0.9.5
 jsmin==3.0.1
 pyinstaller==5.13.0
+lxml==4.9.3
+PyQtWebEngine==5.15.6
